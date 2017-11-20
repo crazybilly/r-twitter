@@ -28,15 +28,16 @@ library(streamR)
 library(base64enc)
 library(caTools)
 library(SnowballC)
+library(twitteR)
 
 # Harvest tweets ----------------------------------------------------------
 
 # Pulls tweets for a given search string since a provided date. Uncomment/Comment for variation
-tweets_orig  <-  searchTwitter("#MondayMotivation",n=2500, retryOnRateLimit=120, lang="en", since="2017-11-13", resultType="recent")
+tweets_orig  <-  searchTwitter("#MondayMotivation",n=2500, retryOnRateLimit=120, lang="en", since="2017-08-01", resultType="recent")
 # Pulls tweets for a given search string for a given geographical circle.
 # tweets = searchTwitter("#MondayMotivation",n=2500, retryOnRateLimit=120, lang="en", geocode="37.7749,-122.4194,100 mi", since="2017-10-29", resultType="recent")
 
-tweets  <- do.call("rbind", lapply(tweets, as.data.frame)) %>% 
+tweets  <- do.call("rbind", lapply(tweets_orig, as.data.frame)) %>% 
   as.tibble()
 # Set directory to a specific directory on your workstation to save tweets
 # why do we do this? 
