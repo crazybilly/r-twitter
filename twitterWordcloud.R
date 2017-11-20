@@ -16,59 +16,54 @@
 #           Before proceeding, user must set up a Twitter API Application at http://apps.twitter.com
 #           
 # Run lines 2 - 11 first.
-require(twitteR)
-require(ROAuth)
-require(curl)
 
-download.file(url="http://curl.haxx.se/ca/cacert.pem", destfile="cacert.pem")
-reqURL <- 'https://api.twitter.com/oauth/request_token'
-accessURL <- 'https://api.twitter.com/oauth/access_token'
-authURL <- 'https://api.twitter.com/oauth/authorize'
 
-# Replace ConsumerKey and ConsumerSecret with your API valudes from apps.twitter.com
-consumerKey <- 'XXXXXXXXXX' 
-consumerSecret <- 'XXXXXXXXXX' 
-Cred <- OAuthFactory$new(consumerKey=consumerKey,consumerSecret=consumerSecret,requestURL=reqURL,accessURL=accessURL,authURL=authURL)
+# libraries ---------------------------------------------------------------
 
-# Pause here to auth through browser, enter PIN, press enter. Then, run lines 12 - 16
-# Replace access_token and access_secret with your API valudes from apps.twitter.com
-access_token = 'XXXXXXXXXX' 
-access_secret= 'XXXXXXXXXX'
-save(Cred, file='twitter authentication.Rdata')
-load('twitter authentication.Rdata') 
-setup_twitter_oauth(consumerKey,consumerSecret,access_token,access_secret)
-# Twitter API now authenticated
+library(tidyverse)
+library(magrittr)
 
-# Begin harvesting tweets
-require(tm)
-require(streamR)
-require(base64enc)
-require(caTools)
-require(SnowballC)
+library(tm)
+library(streamR)
+library(base64enc)
+library(caTools)
+library(SnowballC)
+
+# Harvest tweets ----------------------------------------------------------
 
 # Pulls tweets for a given search string since a provided date. Uncomment/Comment for variation
-tweets = searchTwitter("#MondayMotivation",n=2500, retryOnRateLimit=120, lang="en", since="2017-11-13", resultType="recent")
+tweets_orig  <-  searchTwitter("#MondayMotivation",n=2500, retryOnRateLimit=120, lang="en", since="2017-11-13", resultType="recent")
 # Pulls tweets for a given search string for a given geographical circle.
 # tweets = searchTwitter("#MondayMotivation",n=2500, retryOnRateLimit=120, lang="en", geocode="37.7749,-122.4194,100 mi", since="2017-10-29", resultType="recent")
 
-tweets = do.call("rbind", lapply(tweets, as.data.frame))
+tweets  <- do.call("rbind", lapply(tweets, as.data.frame)) %>% 
+  as.tibble()
 # Set directory to a specific directory on your workstation to save tweets
-write.csv(tweets,file="C:/Users/rpodeschi/Dropbox/millikin/teaching/IS470/R/Twitter/tweets.csv")
-some_tweets = tweets 
+# why do we do this? 
+write.csv(tweets,file="data/tweets.csv")
+
+
+# process text ------------------------------------------------------------
+
+
+some_tweets  <-  tweets 
+
 #some_txt = sapply(some_tweets, function(x) x$getText())
-some_txt = some_tweets$text
-some_txt = gsub("(RT|via)((?:\\b\\W*@\\w+)+)", "", some_txt)
-some_txt = gsub("@\\w+", "", some_txt)
-some_txt = gsub("&amp;\\w+","", some_txt)
-some_txt = gsub("[[:punct:]]", "", some_txt)
-some_txt = gsub("[[:digit:]]", "", some_txt)
-some_txt = gsub("http\\w+", "", some_txt)
-some_txt = gsub("^\\s+|\\s+$", "", some_txt)
-some_txt = gsub("[^[:graph:]]", " ", some_txt)
-some_txt = gsub("amp","", some_txt)
-some_txt = gsub("http","", some_txt)
-some_txt = gsub("htt","", some_txt)
-try.error = function(x)
+some_txt <- some_tweets$text
+some_txt <- gsub("(RT|via)((?:\\b\\W*@\\w+)+)", "", some_txt)
+some_txt <- gsub("@\\w+", "", some_txt)
+some_txt <- gsub("&amp;\\w+","", some_txt)
+some_txt <- gsub("[[:punct:]]", "", some_txt)
+some_txt <- gsub("[[:digit:]]", "", some_txt)
+some_txt <- gsub("http\\w+", "", some_txt)
+some_txt <- gsub("^\\s+|\\s+$", "", some_txt)
+some_txt <- gsub("[^[:graph:]]", " ", some_txt)
+some_txt <- gsub("amp","", some_txt)
+some_txt <- gsub("http","", some_txt)
+some_txt <- gsub("htt","", some_txt)
+
+# this function isn't working very well
+try.error  <-  function(x)
 {
   y = NA
   try_error = tryCatch(tolower(x), error=function(e) e)
