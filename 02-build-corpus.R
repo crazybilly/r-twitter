@@ -45,44 +45,47 @@ write.csv(tweets,file="data/tweets.csv")
 
 # process text ------------------------------------------------------------
 
-
-some_tweets  <-  tweets 
-
-#some_txt = sapply(some_tweets, function(x) x$getText())
-some_txt <- some_tweets$text
-some_txt <- gsub("(RT|via)((?:\\b\\W*@\\w+)+)", "", some_txt)
-some_txt <- gsub("@\\w+", "", some_txt)
-some_txt <- gsub("&amp;\\w+","", some_txt)
-some_txt <- gsub("[[:punct:]]", "", some_txt)
-some_txt <- gsub("[[:digit:]]", "", some_txt)
-some_txt <- gsub("http\\w+", "", some_txt)
-some_txt <- gsub("^\\s+|\\s+$", "", some_txt)
-some_txt <- gsub("[^[:graph:]]", " ", some_txt)
-some_txt <- gsub("amp","", some_txt)
-some_txt <- gsub("http","", some_txt)
-some_txt <- gsub("htt","", some_txt)
-
-# this function isn't working very well
-try.error  <-  function(x)
-{
+try.error  <-  function(x) {
   y = NA
   try_error = tryCatch(tolower(x), error=function(e) e)
   if (!inherits(try_error, "error"))
     y = tolower(x)
   return(y)
-}
-some_txt = sapply(some_txt, try.error)
+  }
+
+some_tweets  <-  tweets %>% 
+  select(doc_id = id, text, everything()) %>% 
+  mutate(
+      text = gsub("(RT|via)((?:\\b\\W*@\\w+)+)", "", text)
+    , text = gsub("@\\w+", "", text)
+    , text = gsub("&amp;\\w+","", text)
+    , text = gsub("[[:punct:]]", "", text)
+    , text = gsub("[[:digit:]]", "", text)
+    , text = gsub("http\\w+", "", text)
+    , text = gsub("^\\s+|\\s+$", "", text)
+    , text = gsub("[^[:graph:]]", " ", text)
+    , text = gsub("amp","", text)
+    , text = gsub("http","", text)
+    , text = gsub("htt","", text)
+  )
+
+some_tweets$text <-  sapply(some_tweets$text, try.error)
 
 # replace monidaymotivation with same hashtag from search string.
-some_txt = gsub("mondaymotivation", "", some_txt)
-corpus = Corpus(VectorSource(some_txt))
-corpus = tm_map(corpus, removeWords, stopwords("english"))
-corpus = tm_map(corpus, removePunctuation)
-corpus = tm_map(corpus, stripWhitespace)
-corpus = tm_map(corpus,PlainTextDocument)
-corpus = iconv(corpus, to = "utf-8", sub="")
+some_tweets %<>%
+  mutate(
+    text = gsub("mondaymotivation", "", text)
+  )
 
-# Execute WordCloud
-require(wordcloud)
-wordcloud(corpus, scale=c(4,0.5), max.words=150, random.order=FALSE, rot.per=0.35, use.r.layout=FALSE, colors=brewer.pal(8, "Dark2"))
+# build corpus from text --------------------------------------------------
+
+corpus  <- some_tweets %>% 
+  DataframeSource() %>% 
+  Corpus()
+
+corpus  <-  tm_map(corpus, removeWords, stopwords("english"))
+corpus  <-  tm_map(corpus, removePunctuation)
+corpus  <-  tm_map(corpus, stripWhitespace)
+corpus  <-  tm_map(corpus,PlainTextDocument)
+
 
